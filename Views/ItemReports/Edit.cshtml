@@ -1,0 +1,83 @@
+﻿@model CampusLostAndFound.Models.ItemReport
+
+@{
+    ViewData["Title"] = "Edit Item Report";
+}
+
+<h1>Edit Item Report</h1>
+
+<form asp-action="Edit" enctype="multipart/form-data">
+    <input type="hidden" asp-for="Id" />
+
+    <div class="form-group">
+        <label>Type</label>
+        <select asp-for="Type" class="form-control">
+            <option value="1" selected="@(Model.Type == CampusLostAndFound.Models.ReportType.Lost)">Lost</option>
+            <option value="2" selected="@(Model.Type == CampusLostAndFound.Models.ReportType.Found)">Found</option>
+        </select>
+        <span asp-validation-for="Type" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label>Title</label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label>Description</label>
+        <textarea asp-for="Description" class="form-control"></textarea>
+    </div>
+
+    <div class="form-group">
+        <label>Category</label>
+        <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.CategoryId"></select>
+    </div>
+
+    <div class="form-group">
+        <label>Location</label>
+        <select asp-for="LocationId" class="form-control" asp-items="ViewBag.LocationId"></select>
+    </div>
+
+    <div class="form-group">
+        <label>Current Photo</label><br />
+        @if (Model.PhotoPath != null)
+        {
+            <img src="@Model.PhotoPath" width="120" class="rounded border" />
+        }
+        else
+        {
+            <span>No photo</span>
+        }
+    </div>
+
+    <div class="form-group">
+        <label>Upload New Photo</label>
+        <input type="file" name="photo" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label>Contact Name</label>
+        <input asp-for="ContactName" class="form-control" />
+        <span asp-validation-for="ContactName" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label>Contact Email</label>
+        <input asp-for="ContactEmail" class="form-control" />
+        <span asp-validation-for="ContactEmail" class="text-danger"></span>
+    </div>
+
+    <!-- Hidden fields -->
+    <input type="hidden" asp-for="Status" />
+    <input type="hidden" asp-for="DateReported" />
+
+    <br />
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

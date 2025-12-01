@@ -1,0 +1,73 @@
+﻿@{
+    ViewData["Title"] = "Campus Lost & Found";
+}
+
+<div class="container mt-5">
+
+    <!-- HERO Szekció -->
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold">Campus Lost & Found Portal</h1>
+        <p class="lead">
+            Find lost items or report something you’ve found on campus.
+        </p>
+    </div>
+
+    <!-- FŐ GOMBOK -->
+    <div class="row text-center">
+
+        <!-- Browse Items -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h3 class="card-title">Browse Items</h3>
+                    <p class="card-text">See all lost and found items reported.</p>
+                    <a asp-controller="ItemReports" asp-action="Index" class="btn btn-primary btn-lg w-100">
+                        View Items
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lost Item Report -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h3 class="card-title">Lost Something?</h3>
+                    <p class="card-text">Tell us what you lost so others can help you find it.</p>
+                    <a asp-controller="ItemReports" asp-action="Create" asp-route-type="Lost"
+                        class="btn btn-warning btn-lg w-100">
+                        Report Lost Item
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Found Item Report -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h3 class="card-title">Found Something?</h3>
+                    <p class="card-text">Help return it by adding it to the system.</p>
+                    <a asp-controller="ItemReports" asp-action="Create" asp-route-type="Found"
+                         class="btn btn-success btn-lg w-100">
+                         Report Found Item
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin section -->
+    @if (User.IsInRole("Admin"))
+{
+    <div class="row mt-5">
+        <div class="col-md-12 text-center">
+            <a asp-controller="Claims" asp-action="Index" class="btn btn-outline-dark btn-lg">
+                Manage Claims (Admin)
+            </a>
+        </div>
+    </div>
+}
+
+
+</div>

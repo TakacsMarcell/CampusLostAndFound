@@ -1,0 +1,89 @@
+﻿@model IEnumerable<CampusLostAndFound.Models.ItemReport>
+
+@using CampusLostAndFound.Models
+@using System.Security.Claims
+
+@{
+    ViewData["Title"] = "Item Reports";
+}
+
+<h1>Item Reports</h1>
+
+<p>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <a class="btn btn-primary" asp-action="Create">Create New Report</a>
+    }
+    else
+    {
+        <span class="text-muted">You must be logged in to create a report.</span>
+    }
+</p>
+
+<table class="table table-striped table-bordered">
+    <thead class="table-dark">
+        <tr>
+            <th>Type</th>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Category</th>
+            <th>Location</th>
+            <th>Date Reported</th>
+            <th>Status</th>
+            <th>Photo</th>
+            <th>Contact Name</th>
+            <th>Contact Email</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model)
+{
+        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        bool canEditOrDelete = User.IsInRole("Admin") ||
+                               (!string.IsNullOrEmpty(currentUserId) && item.OwnerId == currentUserId);
+
+        <tr class="@(item.Status == ItemStatus.Claimed ? "table-success" : "")">
+            <td>@item.Type</td>
+            <td>@item.Title</td>
+            <td>@item.Description</td>
+            <td>@item.Category?.Name</td>
+            <td>@item.Location?.Name</td>
+            <td>@item.DateReported.ToShortDateString()</td>
+            <td>@item.Status</td>
+
+            <td>
+                @if (!string.IsNullOrEmpty(item.PhotoPath))
+                {
+                    <img src="@item.PhotoPath" width="80" style="border-radius:4px;" />
+                }
+                else
+                {
+                    <span>No photo</span>
+                }
+            </td>
+
+            <td>@item.ContactName</td>
+            <td>@item.ContactEmail</td>
+
+            <td>
+                <!-- Details / Claim: mindig -->
+                <a class="btn btn-sm btn-info" asp-action="Details" asp-route-id="@item.Id">
+                    Details / Claim
+                </a>
+
+                <!-- Edit/Delete: csak SAJÁT vagy ADMIN, és NEM Claimed -->
+                @if (canEditOrDelete && item.Status != ItemStatus.Claimed)
+                {
+                    <a class="btn btn-sm btn-warning ms-1" asp-action="Edit" asp-route-id="@item.Id">
+                        Edit
+                    </a>
+                    <a class="btn btn-sm btn-danger ms-1" asp-action="Delete" asp-route-id="@item.Id">
+                        Delete
+                    </a>
+                }
+            </td>
+        </tr>
+}
+    </tbody>
+</table>
