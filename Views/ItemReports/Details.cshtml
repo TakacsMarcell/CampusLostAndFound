@@ -62,7 +62,6 @@
 <div>
     <a class="btn btn-secondary" asp-action="Index">Back to List</a>
 
-    @* Claim gomb csak akkor, ha NINCS végleg claimelve *@
     @if (Model.Status != ItemStatus.Claimed)
     {
         <a class="btn btn-success ms-2"

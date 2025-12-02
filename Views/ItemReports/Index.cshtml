@@ -40,8 +40,8 @@
 @foreach (var item in Model)
 {
         var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        bool canEditOrDelete = User.IsInRole("Admin") ||
-                               (!string.IsNullOrEmpty(currentUserId) && item.OwnerId == currentUserId);
+        bool isAdmin = User.IsInRole("Admin");
+        bool isOwner = !string.IsNullOrEmpty(currentUserId) && item.OwnerId == currentUserId;
 
         <tr class="@(item.Status == ItemStatus.Claimed ? "table-success" : "")">
             <td>@item.Type</td>
@@ -72,8 +72,10 @@
                     Details / Claim
                 </a>
 
-                <!-- Edit/Delete: csak SAJÁT vagy ADMIN, és NEM Claimed -->
-                @if (canEditOrDelete && item.Status != ItemStatus.Claimed)
+                <!-- Edit/Delete:
+                     - Admin: MINDIG (akár Claimed is)
+                     - Owner: csak ha NEM Claimed -->
+                @if (isAdmin || (isOwner && item.Status != ItemStatus.Claimed))
                 {
                     <a class="btn btn-sm btn-warning ms-1" asp-action="Edit" asp-route-id="@item.Id">
                         Edit

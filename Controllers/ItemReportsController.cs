@@ -204,12 +204,17 @@ namespace CampusLostAndFound.Controllers
         // Segédfüggvény: tulaj vagy admin?
         private bool CanEditOrDelete(ItemReport item)
         {
-            // Claimed itemet már SENKI ne szerkeszthessen / törölhessen
+            // Admin mindenhez hozzáfér, még claimed itemhez is
+            if (User.IsInRole("Admin"))
+                return true;
+
+            // Sima felhasználó nem szerkeszthet/törölhet claimed itemet
             if (item.Status == ItemStatus.Claimed)
                 return false;
 
+            // Sima felhasználó csak a SAJÁT itemét módosíthatja
             var userId = _userManager.GetUserId(User);
-            return User.IsInRole("Admin") || item.OwnerId == userId;
+            return item.OwnerId == userId;
         }
 
     }
