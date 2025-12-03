@@ -28,7 +28,7 @@ namespace CampusLostAndFound.Areas.Identity.Pages.Account
             await _signInManager.SignOutAsync();
             _logger.LogInformation("User logged out.");
 
-            return LocalRedirect("~/");   // mindig Home
+            return LocalRedirect("~/");   
         }
     }
 }

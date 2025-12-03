@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CampusLostAndFound.Controllers
 {
-    [Authorize] // minden bejelentkezett user elérheti (Create, stb.)
+    [Authorize] 
     public class ClaimsController : Controller
     {
         private readonly ApplicationDbContext _context;
