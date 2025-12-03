@@ -1,27 +1,29 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using CampusLostAndFound.Data;
 using CampusLostAndFound.Models;
 using Microsoft.AspNetCore.Authorization;
-
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace CampusLostAndFound.Controllers
 {
-    [Authorize]
+    [Authorize] // minden bejelentkezett user elérheti (Create, stb.)
     public class ClaimsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public ClaimsController(ApplicationDbContext context)
+        public ClaimsController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
-        // GET: Claims
+        // GET: Claims (ADMIN LISTA)
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Index()
         {
             var claims = _context.Claims
@@ -30,32 +32,24 @@ namespace CampusLostAndFound.Controllers
             return View(await claims.ToListAsync());
         }
 
-        // GET: Claims/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-                return NotFound();
-
-            var claim = await _context.Claims
-                .Include(c => c.ItemReport)
-                .FirstOrDefaultAsync(m => m.Id == id);
-
-            if (claim == null)
-                return NotFound();
-
-            return View(claim);
-        }
-
         // GET: Claims/Create?itemReportId=5
-        public IActionResult Create(int itemReportId)
+        public async Task<IActionResult> Create(int itemReportId)
         {
-            var item = _context.ItemReports.Find(itemReportId);
+            var item = await _context.ItemReports.FindAsync(itemReportId);
             if (item == null) return NotFound();
 
-            // Ha már Claimed, ne engedjük a claimet
-            if (item.Status == ItemStatus.Claimed)
+            var currentUserId = _userManager.GetUserId(User);
+
+            // 1) SAJÁT ITEMET NE LEHESSEN CLAIMELNI
+            if (!string.IsNullOrEmpty(item.OwnerId) && item.OwnerId == currentUserId)
             {
-                // Visszadobjuk az item részletezőre
+                return RedirectToAction("Details", "ItemReports", new { id = itemReportId });
+            }
+
+            // 2) CSAK OPEN STÁTUSZÚ ITEMET LEHESSEN CLAIMELNI
+            //    (PendingClaim vagy Claimed esetén ne)
+            if (item.Status != ItemStatus.Open)
+            {
                 return RedirectToAction("Details", "ItemReports", new { id = itemReportId });
             }
 
@@ -83,117 +77,34 @@ namespace CampusLostAndFound.Controllers
                 return NotFound();
             }
 
-  
-            if (item.Status == ItemStatus.Claimed)
+            var currentUserId = _userManager.GetUserId(User);
+
+            // 1) SAJÁT ITEMET NE LEHESSEN CLAIMELNI
+            if (!string.IsNullOrEmpty(item.OwnerId) && item.OwnerId == currentUserId)
             {
                 return RedirectToAction("Details", "ItemReports", new { id = claim.ItemReportId });
             }
 
+            // 2) CSAK OPEN STÁTUSZÚ ITEMET LEHESSEN CLAIMELNI
+            if (item.Status != ItemStatus.Open)
+            {
+                return RedirectToAction("Details", "ItemReports", new { id = claim.ItemReportId });
+            }
+
+            // Ha minden OK: létrejön az új claim
             claim.Status = ClaimStatus.New;
             claim.CreatedAt = DateTime.Now;
 
             _context.Claims.Add(claim);
 
-  
-            if (item.Status == ItemStatus.Open)
-            {
-                item.Status = ItemStatus.PendingClaim;
-            }
+            // Item státusz → PendingClaim
+            item.Status = ItemStatus.PendingClaim;
 
             await _context.SaveChangesAsync();
             return RedirectToAction("Details", "ItemReports", new { id = claim.ItemReportId });
         }
 
-
-        // GET: Claims/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-                return NotFound();
-
-            var claim = await _context.Claims
-                .Include(c => c.ItemReport)
-                .FirstOrDefaultAsync(c => c.Id == id);
-
-            if (claim == null)
-                return NotFound();
-
-            ViewData["ItemReportId"] = new SelectList(_context.ItemReports, "Id", "Title", claim.ItemReportId);
-
-            return View(claim);
-        }
-
-        // POST: Claims/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Claim claim)
-        {
-            if (id != claim.Id)
-                return NotFound();
-
-            if (!ModelState.IsValid)
-            {
-                ViewData["ItemReportId"] = new SelectList(_context.ItemReports, "Id", "Title", claim.ItemReportId);
-                return View(claim);
-            }
-
-            try
-            {
-                _context.Update(claim);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ClaimExists(claim.Id))
-                    return NotFound();
-                else
-                    throw;
-            }
-
-            return RedirectToAction(nameof(Index));
-        }
-
-        // GET: Claims/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-                return NotFound();
-
-            var claim = await _context.Claims
-                .Include(c => c.ItemReport)
-                .FirstOrDefaultAsync(m => m.Id == id);
-
-            if (claim == null)
-                return NotFound();
-
-            return View(claim);
-        }
-
-        // POST: Claims/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var claim = await _context.Claims
-                .Include(c => c.ItemReport)
-                .FirstOrDefaultAsync(c => c.Id == id);
-
-            if (claim != null)
-            {
-                // Ha töröljük a claimet, az item státuszt vissza lehet állítani
-                if (claim.ItemReport != null && claim.Status == ClaimStatus.New)
-                {
-                    claim.ItemReport.Status = ItemStatus.Open;
-                }
-
-                _context.Claims.Remove(claim);
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToAction(nameof(Index));
-        }
-
-        // APPROVE
+        // APPROVE – csak ADMIN
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Approve(int id)
         {
@@ -213,7 +124,7 @@ namespace CampusLostAndFound.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // REJECT
+        // REJECT – csak ADMIN
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Reject(int id)
         {
@@ -231,11 +142,6 @@ namespace CampusLostAndFound.Controllers
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool ClaimExists(int id)
-        {
-            return _context.Claims.Any(e => e.Id == id);
         }
     }
 }
